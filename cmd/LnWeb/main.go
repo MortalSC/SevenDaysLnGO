@@ -20,9 +20,9 @@ func onlyForV2() LnWeb.HandlerFunc {
 
 func main() {
 	r := LnWeb.New()
-	r.Use(LnWeb.Logger()) // global middleware
+	r.Use(LnWeb.Logger(), LnWeb.Recovery()) // global middleware
 	r.GET("/", func(c *LnWeb.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+		c.HTML(http.StatusOK, "static", "<h1>Hello Gee</h1>")
 	})
 
 	v2 := r.Group("/v2")
@@ -33,6 +33,11 @@ func main() {
 			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
 		})
 	}
+
+	r.GET("/panic", func(c *LnWeb.Context) {
+		sl := []int{1, 2, 3, 4, 5}
+		_ = sl[100]
+	})
 
 	r.Run(":9999")
 }
