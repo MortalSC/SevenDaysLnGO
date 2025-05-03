@@ -110,18 +110,36 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 }
 
 // 处理请求入口
+// handle 处理路由请求的核心逻辑
 func (r *router) handle(c *Context) {
-	// 查找匹配的路由节点并解析参数
+	// 1. 路由匹配阶段
+	// 通过请求方法和路径查找匹配的路由节点
 	if n, params := r.getRoute(c.Method, c.Path); n != nil {
-		// 使用路由注册时的原始pattern构造key
+		// 成功匹配路由时的处理流程
+
+		// 1.1 构造路由唯一标识键
+		// 格式示例：GET-/user/:id
 		key := c.Method + "-" + n.pattern
-		c.Params = params // 将解析出的参数存入上下文
-		if handler, ok := r.handlers[key]; ok {
-			handler(c)
-			return
-		}
+
+		// 1.2 注入路由参数到上下文
+		// 示例：路径/user/123 会解析出 {"id": "123"}
+		c.Params = params
+
+		// 1.3 追加路由处理函数到执行链
+		// 注意：此时中间件已通过路由组收集到c.handlers
+		c.handlers = append(c.handlers, r.handlers[key])
+	} else {
+		// 2. 404处理流程
+
+		// 2.1 追加404处理函数到执行链
+		c.handlers = append(c.handlers, func(ctx *Context) {
+			c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		})
 	}
-	c.String(http.StatusNotFound, "404 page not found")
+
+	// 3. 启动中间件+处理函数执行链
+	// 执行顺序：中间件1 -> 中间件2 -> 路由处理函数/404处理器
+	c.Next()
 }
 
 /*
