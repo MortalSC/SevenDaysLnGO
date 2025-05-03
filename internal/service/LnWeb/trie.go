@@ -109,3 +109,16 @@ func (n *node) search(parts []string, height int) *node {
 
 	return nil
 }
+
+/*
+
+示例工作流程：
+	插入路由 /p/:lang/doc：
+		拆分为 parts ["p", ":lang", "doc"]
+		逐层创建节点：根 -> p -> :lang -> doc（在doc节点设置pattern）
+
+	搜索路径 /p/go/doc：
+		拆分为 parts ["p", "go", "doc"]
+		匹配路径：根 -> p（精确匹配） -> :lang（参数匹配） -> doc（精确匹配）
+
+*/
